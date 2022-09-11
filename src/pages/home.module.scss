@@ -48,7 +48,15 @@
 }
 
 .loadMore {
-    color: var(--purple);
-    font-size: 1.125rem;
-    font-weight: bold;
+  margin: 1.75rem 0.5rem;
+  background: none;
+  border: none;
+  color: var(--purple);
+  font-size: 1.125rem;
+  font-weight: bold;
+  transition: all 0.4s;
+  &:hover {
+    filter: brightness(0.9);
+    text-decoration: underline;
+  }
 }

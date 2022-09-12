@@ -60,3 +60,13 @@
     }
   }
 }
+
+.postIsLoading {
+  margin: 2.75rem auto;
+  max-width: 1120px;
+  padding: 0 1rem;
+
+  color: var(--pink);
+  font-size: 1rem;
+  font-weight: bold;
+}

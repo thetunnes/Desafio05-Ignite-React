@@ -194,6 +194,7 @@ describe('Home', () => {
 
     fireEvent.click(loadMorePostsButton);
 
+    console.log('TESTE AQUI PORRA', mockedFetch)
     await waitFor(
       () => {
         expect(mockedFetch).toHaveBeenCalled();

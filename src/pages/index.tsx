@@ -13,20 +13,21 @@ import { getPrismicClient } from '../services/prismic';
 
 import commonStyles from '../styles/common.module.scss';
 import styles from './home.module.scss';
+import { ptBR } from 'date-fns/locale';
 
 interface Post {
   uid?: string;
-  updateAt: string | null;
-  // data: {
-  title: string;
-  subtitle: string;
-  author: string;
-  //};
+  first_publication_date: string | null;
+  data: {
+    title: string;
+    subtitle: string;
+    author: string;
+  };
 }
 
 interface PostPagination {
   next_page: string;
-  posts: Post[];
+  results: Post[];
 }
 
 interface HomeProps {
@@ -34,42 +35,41 @@ interface HomeProps {
 }
 
 export default function Home({ postsPagination }: HomeProps) {
-  let test = false;
 
   const [posts, setPosts] = useState([]);
   const [nextPage, setNextPage] = useState('');
-  const [loading, setLoading] = useState(false);
+
   async function getMorePosts() {
     try {
-      await fetch(nextPage).then(async resp => {
-        const data = await resp.json();
-        console.log(data.results);
-        setLoading(true);
-        setNextPage(data.next_page);
-        const formattedPosts = data.results.map(post => ({
-          uid: post.slugs[0],
-          title: post.data.title,
-          subtitle: post.data.subtitle,
-          author: post.data.author,
-          updateAt: format(new Date(post.last_publication_date), 'dd MMM yyyy'),
-        }));
-        setPosts(prev => [...prev, ...formattedPosts]);
-      });
+      if (postsPagination?.next_page) {
+        await fetch(postsPagination.next_page).then(async resp => {
+          const data = await resp.json();
+          const formattedPosts = data.results.map(post => ({
+            uid: post.uid,
+            data: {
+              title: post.data.title,
+              subtitle: post.data.subtitle,
+              author: post.data.author,
+            },
+            first_publication_date: format(
+              new Date(post.first_publication_date),
+              'dd MMM yyyy'
+            ),
+          }));
+          setNextPage(data.next_page);
+          setPosts(prev => [...prev, ...formattedPosts]);
+        });
+      }
     } catch (err) {
       console.log(err);
     }
   }
 
   useEffect(() => {
-    setPosts(postsPagination.posts);
+    setPosts(postsPagination.results);
     setNextPage(postsPagination.next_page);
   }, []);
 
-  useMemo(() => {
-    setLoading(false);
-  }, [posts]);
-
-  console.log(posts);
   return (
     <>
       <Head>
@@ -84,16 +84,22 @@ export default function Home({ postsPagination }: HomeProps) {
           posts.map(post => (
             <Link href={`/post/${post.uid}`} key={post.uid}>
               <a className={styles.post}>
-                <h1>{post.title}</h1>
-                <p>{post.subtitle}</p>
+                <h1>{post.data.title}</h1>
+                <p>{post.data.subtitle}</p>
                 <div>
                   <span>
-                    <BsCalendar2Day /> {post.updateAt}
+                    <BsCalendar2Day />{' '}
+                    {format(
+                      new Date(post.first_publication_date),
+                      'dd MMM yyyy',
+                      {
+                        locale: ptBR,
+                      }
+                    )}
                   </span>
                   <span>
-                    <BiUser /> {post.author}
+                    <BiUser /> {post.data.author}
                   </span>
-                  {loading && <div>Loading...</div>}
                 </div>
               </a>
             </Link>
@@ -112,21 +118,21 @@ export default function Home({ postsPagination }: HomeProps) {
 export const getStaticProps: GetStaticProps = async () => {
   const prismic = getPrismicClient({});
   const postsResponse = await prismic.getByType('posts', {
-    pageSize: 1,
+    pageSize: 2,
   });
 
   const postsPagination = {
     next_page: postsResponse.next_page,
-    posts: postsResponse.results.map(post => ({
-      uid: post.slugs[0],
-      title: post.data.title,
-      subtitle: post.data.subtitle,
-      author: post.data.author,
-      updateAt: format(new Date(post.last_publication_date), 'dd MMM yyyy'),
+    results: postsResponse.results.map(post => ({
+      uid: post.uid,
+      data: {
+        title: post.data.title,
+        subtitle: post.data.subtitle,
+        author: post.data.author,
+      },
+      first_publication_date: post.first_publication_date,
     })),
   };
-
-  console.log(postsPagination);
 
   return {
     props: {
